@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进制转换器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%);
+        }
+        
+        /* 二进制数字背景 */
+        .binary-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.7;
+        }
+        
+        .binary-digit {
+            position: absolute;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            opacity: 0.7;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            box-shadow: 0 4px 30px rgba(0, 255, 128, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 128, 0.2);
+            animation: fadeIn 1s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .converter-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: #555;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab:hover {
+            color: #4CAF50;
+        }
+        
+        .tab.active {
+            color: #4CAF50;
+            border-bottom-color: #4CAF50;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: slideIn 0.5s ease-in-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="number"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        button.secondary {
+            background-color: #2196F3;
+        }
+        
+        button.secondary:hover {
+            background-color: #1976D2;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: rgba(249, 249, 249, 0.9);
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+        
+        .result h2 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        #binary-result,
+        #decimal-result,
+        #hex-result {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .history {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: rgba(240, 240, 240, 0.9);
+            border-radius: 8px;
+        }
+        
+        .history h2 {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        #history-list {
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        #history-list div {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        #history-list div:last-child {
+            border-bottom: none;
+        }
+        
+        .info-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .info-section h2 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .info-section p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 二进制数字背景 -->
+    <div class="binary-background" id="binary-background"></div>
+    
+    <div class="container">
+        <h1>进制转换器</h1>
+        
+        <!-- 转换器标签页 -->
+        <div class="converter-tabs">
+            <div class="tab active" onclick="switchTab('decimal-to-binary')">十进制转二进制</div>
+            <div class="tab" onclick="switchTab('binary-to-decimal')">二进制转十进制</div>
+            <div class="tab" onclick="switchTab('decimal-to-hex')">十进制转十六进制</div>
+        </div>
+        
+        <!-- 十进制转二进制 -->
+        <div class="tab-content active" id="decimal-to-binary">
+            <div class="input-group">
+                <label for="decimal-input">输入十进制数：</label>
+                <input type="number" id="decimal-input" placeholder="请输入一个十进制数">
+                <div class="button-group">
+                    <button onclick="convertToBinary()">转换为二进制</button>
+                    <button class="secondary" onclick="clearInput('decimal-input')">清空</button>
+                </div>
+            </div>
+            
+            <div class="result">
+                <h2>二进制结果：</h2>
+                <div id="binary-result">请输入一个十进制数并点击转换按钮</div>
+                <button class="secondary" onclick="copyResult('binary-result')">复制结果</button>
+            </div>
+        </div>
+        
+        <!-- 二进制转十进制 -->
+        <div class="tab-content" id="binary-to-decimal">
+            <div class="input-group">
+                <label for="binary-input">输入二进制数：</label>
+                <input type="text" id="binary-input" placeholder="请输入一个二进制数（仅包含0和1）">
+                <div class="button-group">
+                    <button onclick="convertToDecimal()">转换为十进制</button>
+                    <button class="secondary" onclick="clearInput('binary-input')">清空</button>
+                </div>
+            </div>
+            
+            <div class="result">
+                <h2>十进制结果：</h2>
+                <div id="decimal-result">请输入一个二进制数并点击转换按钮</div>
+                <button class="secondary" onclick="copyResult('decimal-result')">复制结果</button>
+            </div>
+        </div>
+        
+        <!-- 十进制转十六进制 -->
+        <div class="tab-content" id="decimal-to-hex">
+            <div class="input-group">
+                <label for="decimal-input-hex">输入十进制数：</label>
+                <input type="number" id="decimal-input-hex" placeholder="请输入一个十进制数">
+                <div class="button-group">
+                    <button onclick="convertToHex()">转换为十六进制</button>
+                    <button class="secondary" onclick="clearInput('decimal-input-hex')">清空</button>
+                </div>
+            </div>
+            
+            <div class="result">
+                <h2>十六进制结果：</h2>
+                <div id="hex-result">请输入一个十进制数并点击转换按钮</div>
+                <button class="secondary" onclick="copyResult('hex-result')">复制结果</button>
+            </div>
+        </div>
+        
+        <!-- 历史记录 -->
+        <div class="history">
+            <h2>转换历史</h2>
+            <div id="history-list">暂无历史记录</div>
+        </div>
+        
+        <!-- 信息部分 -->
+        <div class="info-section">
+            <h2>什么是二进制？</h2>
+            <p>二进制是一种以2为基数的记数法，通常用0和1来表示。在计算机科学中，二进制是最基本的数制，因为计算机的硬件只能识别两种状态：开（1）和关（0）。通过组合这些0和1，计算机可以表示和处理各种复杂的信息。</p>
+        </div>
+    </div>
+    
+    <script>
+        // 历史记录数组
+        let history = [];
+        
+        // 二进制数字背景效果
+        function createBinaryBackground() {
+            const background = document.getElementById('binary-background');
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            // 创建150个二进制数字
+            for (let i = 0; i < 150; i++) {
+                const digit = document.createElement('div');
+                digit.className = 'binary-digit';
+                digit.textContent = Math.random() > 0.5 ? '1' : '0';
+                digit.style.left = Math.random() * width + 'px';
+                digit.style.top = Math.random() * height + 'px';
+                digit.style.fontSize = (Math.random() * 12 + 10) + 'px';
+                digit.style.opacity = Math.random() * 0.5 + 0.3;
+                digit.style.animationDuration = (Math.random() * 8 + 4) + 's';
+                digit.style.animationDelay = Math.random() * 5 + 's';
+                
+                background.appendChild(digit);
+            }
+            
+            // 动画效果
+            let digits = document.querySelectorAll('.binary-digit');
+            setInterval(() => {
+                digits.forEach(digit => {
+                    // 移动数字
+                    let top = parseFloat(digit.style.top);
+                    let speed = Math.random() * 2 + 1;
+                    top += speed;
+                    
+                    // 数字超出屏幕后重新定位
+                    if (top > height) {
+                        top = -20;
+                        digit.style.left = Math.random() * width + 'px';
+                        digit.textContent = Math.random() > 0.5 ? '1' : '0';
+                        digit.style.opacity = Math.random() * 0.5 + 0.3;
+                    }
+                    
+                    digit.style.top = top + 'px';
+                });
+            }, 30);
+        }
+        
+        // 切换标签页
+        function switchTab(tabId) {
+            // 隐藏所有内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的活动状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的内容
+            document.getElementById(tabId).classList.add('active');
+            
+            // 激活选中的标签
+            event.target.classList.add('active');
+        }
+        
+        // 十进制转二进制
+        function convertToBinary() {
+            const decimalInput = document.getElementById('decimal-input');
+            const decimalNumber = parseInt(decimalInput.value);
+            
+            if (isNaN(decimalNumber)) {
+                document.getElementById('binary-result').textContent = '请输入有效的十进制数';
+                return;
+            }
+            
+            const binaryNumber = decimalNumber.toString(2);
+            document.getElementById('binary-result').textContent = binaryNumber;
+            
+            // 添加到历史记录
+            addToHistory(`十进制 ${decimalNumber} → 二进制 ${binaryNumber}`);
+        }
+        
+        // 二进制转十进制
+        function convertToDecimal() {
+            const binaryInput = document.getElementById('binary-input');
+            const binaryNumber = binaryInput.value;
+            
+            // 验证输入是否为有效的二进制数
+            if (!/^[01]+$/.test(binaryNumber)) {
+                document.getElementById('decimal-result').textContent = '请输入有效的二进制数（仅包含0和1）';
+                return;
+            }
+            
+            const decimalNumber = parseInt(binaryNumber, 2);
+            document.getElementById('decimal-result').textContent = decimalNumber;
+            
+            // 添加到历史记录
+            addToHistory(`二进制 ${binaryNumber} → 十进制 ${decimalNumber}`);
+        }
+        
+        // 十进制转十六进制
+        function convertToHex() {
+            const decimalInput = document.getElementById('decimal-input-hex');
+            const decimalNumber = parseInt(decimalInput.value);
+            
+            if (isNaN(decimalNumber)) {
+                document.getElementById('hex-result').textContent = '请输入有效的十进制数';
+                return;
+            }
+            
+            const hexNumber = decimalNumber.toString(16).toUpperCase();
+            document.getElementById('hex-result').textContent = hexNumber;
+            
+            // 添加到历史记录
+            addToHistory(`十进制 ${decimalNumber} → 十六进制 ${hexNumber}`);
+        }
+        
+        // 清空输入
+        function clearInput(inputId) {
+            document.getElementById(inputId).value = '';
+        }
+        
+        // 复制结果
+        function copyResult(resultId) {
+            const result = document.getElementById(resultId).textContent;
+            navigator.clipboard.writeText(result).then(() => {
+                alert('结果已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+        
+        // 添加到历史记录
+        function addToHistory(entry) {
+            history.unshift(entry);
+            
+            // 限制历史记录数量
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            // 更新历史记录显示
+            updateHistoryDisplay();
+        }
+        
+        // 更新历史记录显示
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '暂无历史记录';
+                return;
+            }
+            
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.textContent = item;
+                historyList.appendChild(div);
+            });
+        }
+        
+        // 页面加载完成后创建二进制背景
+        window.onload = createBinaryBackground;
+    </script>
+</body>
+</html>
